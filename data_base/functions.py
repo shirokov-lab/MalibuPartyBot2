@@ -1,4 +1,4 @@
-from .models import User
+from .models import User, PicturesTruth, PicturesAction
 from .misc import session
 
 
@@ -19,3 +19,29 @@ class Datafunc():
     @staticmethod
     def commit():
         session.commit()
+
+
+    @staticmethod
+    def get_acts():
+        return session.query(PicturesAction).all()
+
+    @staticmethod
+    def get_truth():
+        return session.query(PicturesTruth).all()
+
+
+    @staticmethod
+    def get_pic_truth(id):
+        return session.query(PicturesTruth).filter_by(id=id).first()
+    @staticmethod
+    def get_pic_act(id):
+        return session.query(PicturesAction).filter_by(id=id).first()
+    
+    @staticmethod
+    def search_act(filename):
+        return session.query(PicturesAction).filter_by(filename=filename).first()
+
+    @staticmethod
+    def search_truth(filename):
+        return session.query(PicturesTruth).filter_by(filename=filename).first()
+        

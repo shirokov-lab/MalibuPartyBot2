@@ -5,46 +5,118 @@ from data_base.models import User
 from handlers.user_handlers.helpers.generator_keyboards import UserGenerationKeyboard
 from config import PAY_TOKEN, TEXTS
 import datetime
+import random
+from aiogram.dispatcher import FSMContext
+
+
 
 
 @dp.message_handler(commands = ['start'])
 async def start(message:types.Message):
     user = Datafunc.get_user(message.from_user.id)
+    keyboard = UserGenerationKeyboard.genstart()
     if user:
-        keyboard = UserGenerationKeyboard.genstart()
         await message.answer(TEXTS["start1"])
         await message.answer(TEXTS["start2"])
         await message.answer(TEXTS["start3"])
         await message.answer(TEXTS["start4"], reply_markup=keyboard)
+        
+
     else:
         await message.answer(TEXTS["start1"])
         await message.answer(TEXTS["start2"])
         await message.answer(TEXTS["start3"])
-        await message.answer(TEXTS["start4"])
+        await message.answer(TEXTS["start4"], reply_markup=keyboard)
         user = User(id=message.from_user.id, chat_id = message.chat.id, username = message.from_user.username)
         Datafunc.add(user)
 
 
-@dp.callback_query_handler(lambda callback: callback.data=='user_start_play_button')
-async def play_bt(callback:types.CallbackQuery):
-    await callback.answer()
-    user = Datafunc.get_user(callback.from_user.id)
-    if user.is_payed == True:
-        await callback.message.answer(text=TEXTS["thanks"],reply_markup=UserGenerationKeyboard.game_bt())
-    else:
-        if PAY_TOKEN.split(':')[1] == 'TEST':
-            await callback.message.answer('Для оплаты используйте данные тестовой карты: 1111 1111 1111 1026, 12/22, CVC 000.')
-        price = types.LabeledPrice(label='Malibu Party Bot', amount=20000)
-        await bot.send_invoice(
-            callback.message.chat.id,
-            title='Malibu Party Bot',
-            description='Игра остается с вами навсегда',
-            provider_token=PAY_TOKEN,
-            currency="rub",
-            prices=[price],
-            start_parameter='eto_start_parametr',
-            payload=datetime.datetime.now().timestamp()
-        )
+
+@dp.message_handler(text='Правда')
+async def send_truth(message: types.Message, state: FSMContext):
+    user = Datafunc.get_user(message.from_user.id)
+    if user.is_payed == False:
+        await message.answer(TEXTS["pay_please"]) 
+        return
+
+    data = await state.get_data()
+
+    if ('dict_user_pictures' in data.keys()) == False: #Проверка, что хранилище создано
+        await state.update_data(dict_user_pictures={})
+        data = await state.get_data()
+    
+    if (str(user.id) in data['dict_user_pictures'].keys()) == False: #Проверка, что ID пользователя, который написал нет в хранилище
+        data['dict_user_pictures'][f'{user.id}'] = {'truth' : [], 'actions' : []}
+        await state.update_data(dict_user_pictures=data['dict_user_pictures'])
+
+    truths = [pic.id for pic in Datafunc.get_truth()] #Генератор листов. Создаем лист только из ID полученных картинок
+    sends_truths = list(set(truths) - set(data['dict_user_pictures'][f'{user.id}']['truth']))
+
+    if (len(sends_truths) == 0): #Обнуляем лист, если кончились картинки
+        sends_truths = truths
+        data['dict_user_pictures'][f'{user.id}']['truth'].clear()
+        await state.update_data(dict_user_pictures=data['dict_user_pictures'])
+
+    randomik = random.randint(0, len(sends_truths)-1) #Отправляем случайную картинку, из тех, что не было
+    pic = Datafunc.get_pic_truth(sends_truths[randomik])
+    await message.answer_photo(types.InputFile(pic.filename))
+
+    data['dict_user_pictures'][f'{user.id}']['truth'].append(sends_truths[randomik]) # Обновляем список отправленных картинок
+    await state.update_data(dict_user_pictures=data['dict_user_pictures'])
+
+
+
+
+@dp.message_handler(text='Действие')
+async def send_act(message: types.Message, state: FSMContext):
+    user = Datafunc.get_user(message.from_user.id)
+    if user.is_payed == False:
+        await message.answer(TEXTS["pay_please"])  
+        return
+
+    data = await state.get_data()
+
+    if ('dict_user_pictures' in data.keys()) == False: #Проверка, что хранилище создано
+        await state.update_data(dict_user_pictures={})
+        data = await state.get_data()
+    
+    if (str(user.id) in data['dict_user_pictures'].keys()) == False: #Проверка, что ID пользователя, который написал нет в хранилище
+        data['dict_user_pictures'][f'{user.id}'] = {'truth' : [], 'actions' : []}
+        await state.update_data(dict_user_pictures=data['dict_user_pictures'])
+
+    acts = [pic.id for pic in Datafunc.get_acts()] #Генератор листов. Создаем лист только из ID полученных картинок
+    sends_acts = list(set(acts) - set(data['dict_user_pictures'][f'{user.id}']['actions']))
+
+    if (len(sends_acts) == 0): #Обнуляем лист, если кончились картинки
+        sends_acts = acts
+        data['dict_user_pictures'][f'{user.id}']['actions'].clear()
+        await state.update_data(dict_user_pictures=data['dict_user_pictures'])
+
+    randomik = random.randint(0, len(sends_acts)-1) #Отправляем случайную картинку, из тех, что не было
+    pic = Datafunc.get_pic_act(sends_acts[randomik])
+    await message.answer_photo(types.InputFile(pic.filename))
+
+    data['dict_user_pictures'][f'{user.id}']['actions'].append(sends_acts[randomik]) # Обновляем список отправленных картинок
+    await state.update_data(dict_user_pictures=data['dict_user_pictures'])
+
+
+
+
+
+
+    
+
+
+@dp.message_handler(text='Главное меню')
+async def send_menu(message: types.Message):
+    keyboard = UserGenerationKeyboard.genstart()
+    await message.answer(TEXTS["start4"], reply_markup=keyboard)
+
+
+
+
+
+
 @dp.callback_query_handler(lambda callback: callback.data=='user_start_rules_button')
 async def rules_bt(callback:types.CallbackQuery):
     await callback.answer() 
@@ -56,19 +128,7 @@ async def help_bt(callback:types.CallbackQuery):
 @dp.callback_query_handler(lambda callback: callback.data=='user_start_reviews_button')
 async def reviews_bt(callback:types.CallbackQuery):
     await callback.answer() 
-    await callback.message.answer(TEXTS["reviews1"])
     await callback.message.answer(TEXTS["reviews2"])
+    await callback.message.answer(TEXTS["reviews1"])
 
 
-
-'''hendel ya.kasy '''
-@dp.pre_checkout_query_handler(state='*')
-async def process_pre_checkout_query(pre_checkout_query: types.PreCheckoutQuery):
-    await bot.answer_pre_checkout_query(pre_checkout_query.id, ok=True)
-
-@dp.message_handler(state='*',content_types=types.ContentTypes.SUCCESSFUL_PAYMENT)
-async def suc_pay(message: types.Message):
-    user = Datafunc.get_user(message.from_user.id)
-    user.is_payed = True
-    Datafunc.commit()
-    await message.answer(text=TEXTS["thanks"])

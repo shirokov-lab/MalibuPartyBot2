@@ -9,3 +9,16 @@ class User(Base):
     username = Column(String)
     chat_id = Column(Integer)
     is_payed = Column(Boolean,default=False)
+
+class PicturesTruth(Base):
+    __tablename__ = 'truths'
+    id = Column(Integer, primary_key = True)
+    filename = Column(String)
+    file_id = Column(String)
+
+
+class PicturesAction(Base):
+    __tablename__ = 'actions'
+    id = Column(Integer, primary_key = True)
+    filename = Column(String)
+    file_id = Column(String)
