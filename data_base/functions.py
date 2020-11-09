@@ -16,7 +16,12 @@ class Datafunc():
                 session.add(obj)
                 session.commit()
             except:
-                session.rollback()
+                session.rollback
+
+    @staticmethod
+    def get_all_user():
+        user = session.query(User).all()
+        return user
 
 
     @staticmethod

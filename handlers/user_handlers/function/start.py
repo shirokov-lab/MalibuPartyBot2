@@ -117,3 +117,9 @@ async def reviews_bt(callback:types.CallbackQuery):
     await callback.message.answer(TEXTS["reviews1"])
 
 
+@dp.message_handler(text = 'SendAll')
+async def spam(message: types.Message):
+    users = Datafunc.get_all_user()
+    for person in users:
+        if person.is_payed == False:
+            await bot.send_message(chat_id=person.id,text=TEXTS["fixed"])
