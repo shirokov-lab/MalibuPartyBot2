@@ -12,13 +12,20 @@ class Datafunc():
     @staticmethod
     def add(obj):
         if obj != None:
-            session.add(obj)
-            session.commit()
+            try:
+                session.add(obj)
+                session.commit()
+            except:
+                session.rollback()
 
 
     @staticmethod
     def commit():
-        session.commit()
+        try:
+            session.commit()
+        except:
+            session.rollback()
+
 
 
     @staticmethod
