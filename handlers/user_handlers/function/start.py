@@ -3,12 +3,10 @@ from aiogram import types
 from data_base.functions import Datafunc
 from data_base.models import User
 from handlers.user_handlers.helpers.generator_keyboards import UserGenerationKeyboard
-from config import PAY_TOKEN, TEXTS
+from config import PAY_TOKEN, TEXTS, ADMINS_ID
 import datetime
 import random
 from aiogram.dispatcher import FSMContext
-
-
 
 
 @dp.message_handler(commands = ['start'])
@@ -21,7 +19,6 @@ async def start(message:types.Message):
         await message.answer(TEXTS["start3"])
         await message.answer(TEXTS["start4"], reply_markup=keyboard)
         
-
     else:
         await message.answer(TEXTS["start1"])
         await message.answer(TEXTS["start2"])
@@ -35,7 +32,7 @@ async def start(message:types.Message):
 @dp.message_handler(text='Правда')
 async def send_truth(message: types.Message, state: FSMContext):
     user = Datafunc.get_user(message.from_user.id)
-    if user.is_payed == False:
+    if (user.is_payed) == False and ((user.id in ADMINS_ID) == False):
         await message.answer(TEXTS["pay_please"]) 
         return
 
@@ -65,12 +62,10 @@ async def send_truth(message: types.Message, state: FSMContext):
     await state.update_data(dict_user_pictures=data['dict_user_pictures'])
 
 
-
-
 @dp.message_handler(text='Действие')
 async def send_act(message: types.Message, state: FSMContext):
     user = Datafunc.get_user(message.from_user.id)
-    if user.is_payed == False:
+    if (user.is_payed) == False and ((user.id in ADMINS_ID) == False):
         await message.answer(TEXTS["pay_please"])  
         return
 
@@ -100,31 +95,21 @@ async def send_act(message: types.Message, state: FSMContext):
     await state.update_data(dict_user_pictures=data['dict_user_pictures'])
 
 
-
-
-
-
-    
-
-
 @dp.message_handler(text='Главное меню')
 async def send_menu(message: types.Message):
     keyboard = UserGenerationKeyboard.genstart()
     await message.answer(TEXTS["start4"], reply_markup=keyboard)
 
-
-
-
-
-
 @dp.callback_query_handler(lambda callback: callback.data=='user_start_rules_button')
 async def rules_bt(callback:types.CallbackQuery):
     await callback.answer() 
     await callback.message.answer(TEXTS["rules"])
+
 @dp.callback_query_handler(lambda callback: callback.data=='user_start_help_button')
 async def help_bt(callback:types.CallbackQuery):
     await callback.answer() 
     await callback.message.answer(TEXTS["helper"])
+
 @dp.callback_query_handler(lambda callback: callback.data=='user_start_reviews_button')
 async def reviews_bt(callback:types.CallbackQuery):
     await callback.answer() 

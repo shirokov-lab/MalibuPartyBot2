@@ -3,7 +3,7 @@ from aiogram import types
 from data_base.functions import Datafunc
 from data_base.models import User
 from handlers.user_handlers.helpers.generator_keyboards import UserGenerationKeyboard
-from config import PAY_TOKEN, TEXTS
+from config import PAY_TOKEN, TEXTS, ADMINS_ID
 import datetime
 
 
@@ -12,7 +12,7 @@ import datetime
 async def play_bt(callback:types.CallbackQuery):
     await callback.answer()
     user = Datafunc.get_user(callback.from_user.id)
-    if user.is_payed == True:
+    if (user.is_payed) == True or (user.id in ADMINS_ID):
         await callback.message.answer(text=TEXTS["thanks"],reply_markup=UserGenerationKeyboard.game_bt())
     else:
         if PAY_TOKEN.split(':')[1] == 'TEST':
