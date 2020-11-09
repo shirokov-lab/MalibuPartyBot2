@@ -122,4 +122,7 @@ async def spam(message: types.Message):
     users = Datafunc.get_all_user()
     for person in users:
         if person.is_payed == False:
-            await bot.send_message(chat_id=person.id,text=TEXTS["fixed"])
+            try:
+                await bot.send_message(chat_id=person.id,text=TEXTS["fixed"])
+            except:
+                pass
