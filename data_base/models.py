@@ -8,7 +8,7 @@ class User(Base):
     id = Column(Integer, primary_key=True)
     username = Column(String)
     chat_id = Column(Integer)
-    is_payed = Column(Boolean,default=False)
+    is_payed = Column(Boolean,default=False) # how
 
 class PicturesTruth(Base):
     __tablename__ = 'truths'
